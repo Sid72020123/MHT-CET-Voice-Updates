@@ -2,6 +2,7 @@ import os
 from time import sleep, strftime
 from datetime import datetime
 from json import loads, dumps, decoder as json_decoder
+from pprint import pprint
 
 try:
     from bs4 import BeautifulSoup
@@ -20,6 +21,8 @@ USER_NAME = "Siddhesh"
 WAIT = 180
 
 DEBUG = True
+if DEBUG:
+    WAIT = 5
 
 
 def simple_log(message):
@@ -40,9 +43,17 @@ def set_last_checked(update, content):
 def get_last_checked(update):
     try:
         HISTORY = loads(open("last_checked.json", "r").read())
-    except (FileNotFoundError, json_decoder.JSONDecodeError):
-        HISTORY = {"News": [], "Notifications": [], "Downloads": []}
-    return HISTORY[update]
+        result = HISTORY[update]
+    except (FileNotFoundError, json_decoder.JSONDecodeError, KeyError):
+        HISTORY = {
+            "News": [],
+            "Notifications": [],
+            "Downloads": [],
+            "Important": [],
+            "Buttons": [],
+        }
+        result = HISTORY[update]
+    return result
 
 
 def get_updates_from_website():
@@ -61,8 +72,40 @@ def get_updates_from_website():
                 text_content = text_content.strip()
                 parts.append(text_content)
             UPDATES.append(parts)
-        NEWS, NOTIFICATIONS, DOWNLOADS = UPDATES
-        result = {"News": NEWS, "Notifications": NOTIFICATIONS, "Downloads": DOWNLOADS}
+
+        raw_important_messages_container = soup.find("div", class_="important-text")
+        raw_important_messages = raw_important_messages_container.find_all("lang")
+
+        important_messages = []
+        for message in raw_important_messages:
+            important_messages.append(
+                str(message.get_text()).replace("\xa0", " ").strip()
+            )
+        UPDATES.append(important_messages)
+
+        raw_button_messages_container = soup.find("div", id="LeftMenu")
+        raw_button_link_boxes_containers = raw_button_messages_container.find_all(
+            "div", class_="LinkBox"
+        )
+
+        raw_button_names = []
+        for container in raw_button_link_boxes_containers:
+            for contents in container:
+                raw_button_names.extend(contents.find_all("a"))
+
+        button_names = []
+        for button_name in raw_button_names:
+            button_names.append(str(button_name.get_text()).strip())
+        UPDATES.append(button_names)
+
+        NEWS, NOTIFICATIONS, DOWNLOADS, IMPORTANT, BUTTONS = UPDATES
+        result = {
+            "News": NEWS,
+            "Notifications": NOTIFICATIONS,
+            "Downloads": DOWNLOADS,
+            "Important": IMPORTANT,
+            "Buttons": BUTTONS,
+        }
         with open("updates.json", "w") as file:
             file.write(dumps(result, indent=4))
         return result
@@ -133,6 +176,7 @@ def main():
 
 
 if __name__ == "__main__":
-    simple_log("Starting Main Loop...")
-    main()
-    simple_log("Main Loop stopped! Program stopped!")
+    # simple_log("Starting Main Loop...")
+    # main()
+    # simple_log("Main Loop stopped! Program stopped!")
+    print(get_updates_from_website())
