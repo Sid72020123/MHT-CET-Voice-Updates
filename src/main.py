@@ -1,5 +1,5 @@
 import os
-from time import sleep
+from time import sleep, strftime
 from datetime import datetime
 from json import loads, dumps, decoder as json_decoder
 
@@ -9,7 +9,7 @@ try:
 
     from gtts import gTTS
 except ModuleNotFoundError:
-    print("[*] Some necessary package requirements were not found! Intalling them...")
+    print("[*] Some necessary package requirements were not found! Installing them...")
     os.system("pip install -r requirements.txt")
     print(
         "[*] All necessary package requirements were installed! Please re-run the program..."
@@ -18,6 +18,13 @@ except ModuleNotFoundError:
 
 USER_NAME = "Siddhesh"
 WAIT = 180
+
+DEBUG = True
+
+
+def simple_log(message):
+    current_time = strftime("%d/%m/%Y %H:%M:%S")
+    print(f"[*] [{current_time}]: {message}")
 
 
 def set_last_checked(update, content):
@@ -61,7 +68,7 @@ def get_updates_from_website():
         return result
 
     except Exception as E:
-        print(f"Error while parsing the updates: {E}")
+        simple_log(f"Error while parsing the updates: {E}")
         return loads(open("updates.json", "r").read())
 
 
@@ -72,7 +79,7 @@ def create_txt_to_speech_message(update_name, message):
 
 
 def play_voice_message():
-    while True:
+    while not DEBUG:
         try:
             info = os.popen("termux-media-player info").read()
             status = loads(info).get("status")
@@ -80,50 +87,34 @@ def play_voice_message():
                 break
             sleep(0.1)
         except Exception as E:
-            print(f"[*] Termux API Sound playing error: {E}")
+            simple_log(f"Termux API Sound playing error: {E}")
             break
-    # os.system("mpg123 notification-sound.mp3")
-    os.system("termux-media-player play notification-sound.mp3")
+    (
+        os.system("mpg123 notification-sound.mp3")
+        if DEBUG
+        else os.system("termux-media-player play notification-sound.mp3")
+    )
     sleep(2)
-    # os.system("mpg123 output.mp3")
-    os.system("termux-media-player play output.mp3")
-    sleep(15)
-
-
-"""
-def main():
-    while True:
-        try:
-            print("[*] Checking for updates...")
-            UPDATES = get_updates_from_website()
-            for update_name, update_messages in UPDATES.items():
-                latest_message = update_messages[0] if len(update_messages) > 0 else ""
-                history = get_last_checked(update_name)
-                if history != latest_message:
-                    print(f"[*] New Update found - {update_name}: {latest_message}")
-                    now = datetime.now()
-                    current_hour = int(now.hour)
-                    if (current_hour > 9) and (current_hour < 23):
-                        create_txt_to_speech_message(update_name, latest_message)
-                        play_voice_message()
-                    set_last_checked(update_name, latest_message)
-        except Exception as E:
-            print(f"[*] Main Loop Error: {E}")
-            sleep(WAIT + 30)
-        sleep(WAIT)
-"""
+    (
+        os.system("mpg123 output.mp3")
+        if DEBUG
+        else os.system("termux-media-player play output.mp3")
+    )
+    if not DEBUG:
+        sleep(15)
 
 
 def main():
+    simple_log("Main Loop Started!")
     while True:
         try:
-            print("[*] Checking for updates...")
+            simple_log("Checking for updates...")
             UPDATES = get_updates_from_website()
             for update_name, update_messages in UPDATES.items():
                 history = get_last_checked(update_name)
                 for message in update_messages:
                     if message not in history:
-                        print(f"[*] New Update found - {update_name}: {message}")
+                        simple_log(f"New Update found - {update_name}: {message}")
                         now = datetime.now()
                         current_hour = int(now.hour)
                         if (current_hour > 8) and (current_hour < 23):
@@ -131,11 +122,17 @@ def main():
                             play_voice_message()
                         set_last_checked(update_name, message)
                         sleep(3)
+            sleep(WAIT)
+        except KeyboardInterrupt:
+            simple_log("Stopping Main Loop...")
+            simple_log("Exiting Program...")
+            break
         except Exception as E:
-            print(f"[*] Main Loop Error: {E}")
+            simple_log(f"Main Loop Error: {E}")
             sleep(WAIT + 30)
-        sleep(WAIT)
 
 
 if __name__ == "__main__":
+    simple_log("Starting Main Loop...")
     main()
+    simple_log("Main Loop stopped! Program stopped!")
