@@ -14,6 +14,7 @@ And done! You will now start receiving the voice updates!
 
 
 **Where did I host/run the program?**
+
 _I had an old Android Tablet. I installed **Termux** (can be found on Google Play Store) on it (un-available on newer Android versions)_
 
 **Can I make changes to the program?**
