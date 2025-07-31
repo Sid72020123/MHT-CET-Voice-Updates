@@ -3,7 +3,6 @@ from random import randint
 from time import sleep, strftime
 from datetime import datetime
 from json import loads, dumps, decoder as json_decoder
-from pprint import pprint
 
 try:
     from bs4 import BeautifulSoup
