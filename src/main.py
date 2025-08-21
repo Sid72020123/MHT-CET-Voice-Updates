@@ -3,6 +3,10 @@ from random import randint
 from time import sleep, strftime
 from datetime import datetime
 from json import loads, dumps, decoder as json_decoder
+from threading import Thread
+
+from config import TELEGRAM_BOT_TOKEN, OWNER_TELEGRAM_ID
+from pyTelegramBot import TelegramBot
 
 try:
     from bs4 import BeautifulSoup
@@ -27,10 +31,27 @@ REPLACE_TERMS = {"MH": "Maharashtra", "AI": "All India"}
 if DEBUG:
     WAIT = 5
 
+bot = TelegramBot(TELEGRAM_BOT_TOKEN)
+
 
 def simple_log(message):
     current_time = strftime("%d/%m/%Y %H:%M:%S")
     print(f"[*] [{current_time}]: {message}")
+
+
+def send_telegram_updates():
+    message = bot.send_message(OWNER_TELEGRAM_ID, "Program running!")
+    print(f"[*] Telegram Updates: Sent the initial message with the ID: {message.id}")
+
+    while True:
+        try:
+            formatted_time = strftime("%d/%m/%Y %H:%M:%S")
+            message.edit(
+                f"<b>Program Status:</b> <i>Running!</i>\n\n<b>Time:</b> <i>{formatted_time}</i>"
+            )
+            sleep(60)
+        except Exception as E:
+            print(f"[*] Telegram Updates: An unknown error occurred: {E}")
 
 
 def set_last_checked(update, content):
@@ -237,6 +258,7 @@ def main():
 
 
 if __name__ == "__main__":
+    Thread(target=send_telegram_updates).start()
     simple_log("Starting Main Loop...")
     main()
     simple_log("Main Loop stopped! Program stopped!")

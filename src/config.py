@@ -1,0 +1,8 @@
+from os import getenv
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
+TELEGRAM_BOT_TOKEN = getenv("TELEGRAM_BOT_TOKEN", "")
+OWNER_TELEGRAM_ID = int(getenv("OWNER_TELEGRAM_ID", ""))
